@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0a0f">
+<title>運動ゲート</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap');
+
+  :root{
+    --bg:#0a0a0f;
+    --panel:#14141d;
+    --line:#26263a;
+    --accent:#d6ff3f;
+    --accent2:#ff4d6d;
+    --ink:#f4f4f8;
+    --muted:#7a7a92;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    background:
+      radial-gradient(120% 80% at 50% -10%, #1a1a2e 0%, transparent 60%),
+      var(--bg);
+    color:var(--ink);
+    font-family:"Zen Kaku Gothic New",sans-serif;
+    overflow:hidden;
+    user-select:none;
+    -webkit-user-select:none;
+    display:flex;
+    flex-direction:column;
+    min-height:100dvh;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  /* grain */
+  body::after{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:99;
+    opacity:.035;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  header{
+    padding:22px 22px 8px;
+    display:flex;align-items:baseline;justify-content:space-between;
+  }
+  header .logo{
+    font-family:"Bebas Neue",sans-serif;
+    font-size:30px;letter-spacing:2px;line-height:1;
+  }
+  header .logo b{color:var(--accent);}
+  header .status{
+    font-size:11px;letter-spacing:1px;color:var(--muted);
+    text-transform:uppercase;
+  }
+
+  main{flex:1;display:flex;flex-direction:column;justify-content:center;padding:0 22px;}
+
+  /* ---- screens ---- */
+  .screen{display:none;animation:fade .4s ease;}
+  .screen.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+  /* lock screen */
+  .lock-emoji{font-size:64px;text-align:center;margin-bottom:6px;filter:grayscale(.2);}
+  h1{
+    font-family:"Bebas Neue",sans-serif;
+    font-size:clamp(40px,13vw,72px);line-height:.92;letter-spacing:1px;
+    text-align:center;margin-bottom:14px;
+  }
+  h1 .hl{color:var(--accent2);}
+  .sub{text-align:center;color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:26px;}
+
+  .pick{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;}
+  .pick button{
+    background:var(--panel);border:1px solid var(--line);color:var(--ink);
+    border-radius:18px;padding:20px 14px;text-align:left;cursor:pointer;
+    transition:.2s;position:relative;overflow:hidden;
+  }
+  .pick button:active{transform:scale(.97);}
+  .pick button.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;}
+  .pick .ex-emoji{font-size:30px;display:block;margin-bottom:8px;}
+  .pick .ex-name{font-weight:900;font-size:17px;}
+  .pick .ex-goal{font-size:12px;color:var(--muted);margin-top:2px;}
+
+  .reps-row{
+    display:flex;align-items:center;justify-content:space-between;
+    background:var(--panel);border:1px solid var(--line);border-radius:18px;
+    padding:14px 18px;margin-bottom:22px;
+  }
+  .reps-row .lbl{font-size:13px;color:var(--muted);}
+  .stepper{display:flex;align-items:center;gap:14px;}
+  .stepper button{
+    width:38px;height:38px;border-radius:12px;border:1px solid var(--line);
+    background:#1d1d2a;color:var(--ink);font-size:22px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .stepper button:active{transform:scale(.9);}
+  .stepper .val{font-family:"Bebas Neue";font-size:30px;min-width:46px;text-align:center;}
+
+  .btn-primary{
+    width:100%;border:none;border-radius:18px;cursor:pointer;
+    background:var(--accent);color:#0a0a0f;
+    font-family:"Bebas Neue",sans-serif;font-size:26px;letter-spacing:1px;
+    padding:18px;transition:.15s;
+  }
+  .btn-primary:active{transform:scale(.98);filter:brightness(1.05);}
+  .btn-ghost{
+    width:100%;background:none;border:1px solid var(--line);color:var(--muted);
+    border-radius:14px;padding:13px;font-size:14px;cursor:pointer;margin-top:10px;
+    font-family:inherit;
+  }
+
+  /* exercise screen */
+  .gauge-wrap{display:flex;flex-direction:column;align-items:center;}
+  .ring{position:relative;width:230px;height:230px;margin:0 auto 8px;}
+  .ring svg{transform:rotate(-90deg);width:100%;height:100%;}
+  .ring .bg{fill:none;stroke:var(--line);stroke-width:14;}
+  .ring .fg{fill:none;stroke:var(--accent);stroke-width:14;stroke-linecap:round;
+    transition:stroke-dashoffset .3s ease;}
+  .ring .center{
+    position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+  }
+  .ring .count{font-family:"Bebas Neue";font-size:88px;line-height:.8;}
+  .ring .of{color:var(--muted);font-size:15px;margin-top:6px;}
+  .ex-title{text-align:center;font-weight:900;font-size:22px;margin-bottom:4px;}
+  .hint{text-align:center;color:var(--muted);font-size:13px;margin-bottom:20px;min-height:18px;}
+  .live{
+    display:inline-block;width:8px;height:8px;border-radius:50%;
+    background:var(--accent2);margin-right:6px;vertical-align:middle;
+    animation:pulse 1s infinite;
+  }
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.25;}}
+
+  /* unlocked */
+  .done-emoji{font-size:72px;text-align:center;margin-bottom:8px;animation:pop .5s ease;}
+  @keyframes pop{0%{transform:scale(.3);opacity:0;}60%{transform:scale(1.15);}100%{transform:scale(1);opacity:1;}}
+  .token{
+    background:var(--panel);border:1px dashed var(--accent);border-radius:16px;
+    padding:18px;text-align:center;margin:22px 0;
+  }
+  .token .lbl{font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+  .token .code{font-family:"Bebas Neue";font-size:42px;letter-spacing:6px;color:var(--accent);margin-top:4px;}
+
+  footer{padding:14px 22px 18px;text-align:center;color:var(--muted);font-size:11px;line-height:1.6;}
+  .err{color:var(--accent2);font-size:13px;text-align:center;margin-top:12px;min-height:16px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">GATE<b>.</b></div>
+  <div class="status" id="status">LOCKED</div>
+</header>
+
+<main>
+  <!-- ===== LOCK / SETUP ===== -->
+  <section class="screen active" id="screen-lock">
+    <div class="lock-emoji">🔒</div>
+    <h1>運動<span class="hl">しろ</span></h1>
+    <p class="sub">解除するには種目をこなせ。<br>センサーが回数を数える。</p>
+
+    <div class="pick" id="pick">
+      <button data-ex="squat" class="sel">
+        <span class="ex-emoji">🏋️</span>
+        <span class="ex-name">スクワット</span>
+        <span class="ex-goal">上下動をカウント</span>
+      </button>
+      <button data-ex="plank">
+        <span class="ex-emoji">🧘</span>
+        <span class="ex-name">プランク</span>
+        <span class="ex-goal">静止キープを計測</span>
+      </button>
+    </div>
+
+    <div class="reps-row">
+      <span class="lbl" id="goal-label">目標回数</span>
+      <div class="stepper">
+        <button id="minus">−</button>
+        <span class="val" id="goal-val">10</span>
+        <button id="plus">＋</button>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="start">START</button>
+    <div class="err" id="lock-err"></div>
+  </section>
+
+  <!-- ===== EXERCISE ===== -->
+  <section class="screen" id="screen-ex">
+    <div class="ex-title" id="ex-title">スクワット</div>
+    <div class="hint" id="hint"><span class="live"></span>計測中…</div>
+    <div class="gauge-wrap">
+      <div class="ring">
+        <svg viewBox="0 0 240 240">
+          <circle class="bg" cx="120" cy="120" r="106"/>
+          <circle class="fg" id="ring-fg" cx="120" cy="120" r="106"/>
+        </svg>
+        <div class="center">
+          <div class="count" id="count">0</div>
+          <div class="of" id="of">/ 10</div>
+        </div>
+      </div>
+    </div>
+    <button class="btn-ghost" id="cancel">やめる</button>
+  </section>
+
+  <!-- ===== UNLOCKED ===== -->
+  <section class="screen" id="screen-done">
+    <div class="done-emoji">🔓</div>
+    <h1>解除<span class="hl">！</span></h1>
+    <p class="sub">お疲れさま。コードをコピーして<br>ショートカットに貼り付けて。</p>
+    <div class="token">
+      <div class="lbl">UNLOCK CODE</div>
+      <div class="code" id="token-code">----</div>
+    </div>
+    <button class="btn-primary" id="open-app">コードをコピー</button>
+    <button class="btn-ghost" id="restart">もう一度ロック</button>
+  </section>
+</main>
+
+<footer>
+  ※ iOS Safari ではモーション許可が必要です。<br>
+  これは試作です。実際のアプリ制限は iPhone「ショートカット」と組み合わせて使います。
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---- 設定：ショートカット側と一致させる固定の合言葉 ----
+  // ★ここを好きな文字列に変え、ショートカット側の「正解」と同じにする
+  const UNLOCK_CODE = "OPEN24";
+
+  // ---- state ----
+  const state = {
+    exercise: "squat",
+    goal: 10,
+    count: 0,
+    running: false,
+  };
+
+  // ---- elements ----
+  const $ = id => document.getElementById(id);
+  const screens = {
+    lock: $("screen-lock"),
+    ex:   $("screen-ex"),
+    done: $("screen-done"),
+  };
+  function show(name){
+    Object.values(screens).forEach(s=>s.classList.remove("active"));
+    screens[name].classList.add("active");
+  }
+
+  // ---- exercise pick ----
+  const pickBtns = [...document.querySelectorAll("#pick button")];
+  pickBtns.forEach(b=>{
+    b.addEventListener("click", ()=>{
+      pickBtns.forEach(x=>x.classList.remove("sel"));
+      b.classList.add("sel");
+      state.exercise = b.dataset.ex;
+      // adjust default goal & label per exercise
+      if(state.exercise==="plank"){
+        state.goal = 30;            // seconds
+        $("goal-label").textContent = "キープ秒数";
+      }else{
+        state.goal = 10;            // reps
+        $("goal-label").textContent = "目標回数";
+      }
+      $("goal-val").textContent = state.goal;
+    });
+  });
+
+  // ---- stepper ----
+  $("plus").addEventListener("click", ()=>{ setGoal(state.goal + step()); });
+  $("minus").addEventListener("click", ()=>{ setGoal(state.goal - step()); });
+  function step(){ return state.exercise==="plank" ? 5 : 1; }
+  function setGoal(v){
+    const min = state.exercise==="plank" ? 10 : 1;
+    const max = state.exercise==="plank" ? 180 : 100;
+    state.goal = Math.max(min, Math.min(max, v));
+    $("goal-val").textContent = state.goal;
+  }
+
+  // ---- ring helpers ----
+  const R = 106, CIRC = 2 * Math.PI * R;
+  $("ring-fg").style.strokeDasharray = CIRC;
+  function setRing(p){ // p = 0..1
+    $("ring-fg").style.strokeDashoffset = CIRC * (1 - Math.min(1, p));
+  }
+
+  // ---- START ----
+  $("start").addEventListener("click", async ()=>{
+    $("lock-err").textContent = "";
+    const ok = await ensureMotion();
+    if(!ok){
+      $("lock-err").textContent = "モーションセンサーの許可が必要です。設定→Safari→モーションを確認してください。";
+      return;
+    }
+    beginExercise();
+  });
+
+  // ---- iOS motion permission ----
+  async function ensureMotion(){
+    if(typeof DeviceMotionEvent === "undefined") return false;
+    if(typeof DeviceMotionEvent.requestPermission === "function"){
+      try{
+        const res = await DeviceMotionEvent.requestPermission();
+        return res === "granted";
+      }catch(e){ return false; }
+    }
+    return true; // android / older ios: no explicit permission
+  }
+
+  // ---- exercise engine ----
+  let motionHandler = null;
+  let plankTimer = null;
+
+  function beginExercise(){
+    state.count = 0;
+    state.running = true;
+    show("ex");
+    $("status").textContent = "ACTIVE";
+    $("ex-title").textContent = state.exercise==="plank" ? "プランク" : "スクワット";
+    $("count").textContent = "0";
+    $("of").textContent = "/ " + state.goal + (state.exercise==="plank" ? "s" : "");
+    setRing(0);
+
+    if(state.exercise==="squat"){ startSquat(); }
+    else { startPlank(); }
+  }
+
+  // --- SQUAT: count vertical bob via accel magnitude peaks ---
+  function startSquat(){
+    $("hint").innerHTML = '<span class="live"></span>しゃがんで立つを繰り返せ';
+    let baseline = 9.8;
+    let phase = "up";        // waiting for a dip then a rise
+    let lastTime = 0;
+    const DOWN_TH = 7.5;     // below = squatting down
+    const UP_TH   = 11.5;    // above = pushing up
+    const COOLDOWN = 350;    // ms between reps
+
+    motionHandler = (e)=>{
+      const a = e.accelerationIncludingGravity;
+      if(!a) return;
+      const mag = Math.sqrt((a.x||0)**2 + (a.y||0)**2 + (a.z||0)**2);
+      const now = Date.now();
+      if(phase==="up" && mag < DOWN_TH){ phase = "down"; }
+      else if(phase==="down" && mag > UP_TH && now - lastTime > COOLDOWN){
+        phase = "up"; lastTime = now; addRep();
+      }
+    };
+    window.addEventListener("devicemotion", motionHandler);
+  }
+
+  // --- PLANK: hold steady (low movement) for N seconds ---
+  function startPlank(){
+    $("hint").innerHTML = '<span class="live"></span>姿勢をキープして静止';
+    let held = 0;            // seconds accumulated
+    let lastMag = null;
+    let steadyFrames = 0, totalFrames = 0;
+    const MOVE_TH = 1.2;     // accel delta threshold
+
+    motionHandler = (e)=>{
+      const a = e.accelerationIncludingGravity;
+      if(!a) return;
+      const mag = Math.sqrt((a.x||0)**2 + (a.y||0)**2 + (a.z||0)**2);
+      if(lastMag!==null){
+        totalFrames++;
+        if(Math.abs(mag - lastMag) < MOVE_TH) steadyFrames++;
+      }
+      lastMag = mag;
+    };
+    window.addEventListener("devicemotion", motionHandler);
+
+    plankTimer = setInterval(()=>{
+      // require mostly-steady during the last second to count it
+      const steadyRatio = totalFrames ? steadyFrames/totalFrames : 0;
+      if(steadyRatio > 0.55){
+        held++;
+        state.count = held;
+        $("count").textContent = held;
+        setRing(held/state.goal);
+        $("hint").innerHTML = '<span class="live"></span>キープ中… いいぞ';
+        if(held >= state.goal){ finish(); }
+      }else{
+        $("hint").innerHTML = '<span class="live"></span>動きすぎ！静止して';
+      }
+      steadyFrames = 0; totalFrames = 0;
+    }, 1000);
+  }
+
+  function addRep(){
+    state.count++;
+    $("count").textContent = state.count;
+    setRing(state.count/state.goal);
+    // tiny haptic-ish flash
+    $("count").animate(
+      [{transform:"scale(1.25)",color:"#d6ff3f"},{transform:"scale(1)",color:"#f4f4f8"}],
+      {duration:280,easing:"ease-out"}
+    );
+    if(state.count >= state.goal){ finish(); }
+  }
+
+  function stopEngine(){
+    state.running = false;
+    if(motionHandler){ window.removeEventListener("devicemotion", motionHandler); motionHandler=null; }
+    if(plankTimer){ clearInterval(plankTimer); plankTimer=null; }
+  }
+
+  function finish(){
+    stopEngine();
+    $("token-code").textContent = UNLOCK_CODE;
+    $("status").textContent = "UNLOCKED";
+    show("done");
+    if(navigator.vibrate) navigator.vibrate([60,40,120]);
+  }
+
+  // ---- cancel / restart ----
+  $("cancel").addEventListener("click", ()=>{
+    stopEngine();
+    $("status").textContent = "LOCKED";
+    show("lock");
+  });
+  $("restart").addEventListener("click", ()=>{
+    $("status").textContent = "LOCKED";
+    show("lock");
+  });
+  $("open-app").addEventListener("click", async ()=>{
+    const code = $("token-code").textContent;
+    try{
+      await navigator.clipboard.writeText(code);
+      $("open-app").textContent = "コピーしました ✓";
+      setTimeout(()=>{ $("open-app").textContent = "コードをコピー"; }, 1800);
+    }catch(e){
+      alert("解除コード: " + code + "\n（手動でコピーしてください）");
+    }
+  });
+
+})();
+</script>
+</body>
+</html>
